@@ -16,6 +16,7 @@ pub type ScreenRawHandle = Output;
 impl DisplayInfo {
     fn new(
         name: String,
+        display_desc: String,
         monitor_info: &MonitorInfo,
         output: &Output,
         rotation: f32,
@@ -24,6 +25,7 @@ impl DisplayInfo {
     ) -> Self {
         DisplayInfo {
             name,
+            display_desc,
             id: output.resource_id(),
             raw_handle: *output,
             x: ((monitor_info.x() as f32) / scale_factor) as i32,
@@ -175,9 +177,11 @@ pub fn get_all() -> Result<Vec<DisplayInfo>> {
             get_rotation_frequency(&conn, mode_infos, output).unwrap_or((0.0, 0.0));
 
         let name = get_name(&conn, monitor_info.name())?;
+        let display_desc = name.clone();
 
         display_infos.push(DisplayInfo::new(
             name,
+            display_desc,
             monitor_info,
             output,
             rotation,

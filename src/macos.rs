@@ -29,6 +29,7 @@ impl DisplayInfo {
         DisplayInfo {
             id,
             name: format!("Display {id}"),
+            display_desc: String::new(),
             raw_handle: cg_display,
             x: origin.x as i32,
             y: origin.y as i32,

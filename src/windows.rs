@@ -8,10 +8,10 @@ use windows::{
     Win32::{
         Foundation::{BOOL, HWND, LPARAM, POINT, RECT, TRUE},
         Graphics::Gdi::{
-            CreateDCW, EnumDisplayMonitors, EnumDisplaySettingsExW, GetDeviceCaps, GetMonitorInfoW,
-            MonitorFromPoint, ReleaseDC, DEVMODEW, DEVMODE_DISPLAY_ORIENTATION, EDS_RAWMODE,
-            ENUM_CURRENT_SETTINGS, HDC, HMONITOR, HORZSIZE, MONITORINFOEXW, MONITOR_DEFAULTTONULL,
-            VERTSIZE,
+            CreateDCW, EnumDisplayDevicesW, EnumDisplayMonitors, EnumDisplaySettingsExW,
+            GetDeviceCaps, GetMonitorInfoW, MonitorFromPoint, ReleaseDC, DEVMODEW,
+            DEVMODE_DISPLAY_ORIENTATION, DISPLAY_DEVICEW, EDS_RAWMODE, ENUM_CURRENT_SETTINGS, HDC,
+            HMONITOR, HORZSIZE, MONITORINFOEXW, MONITOR_DEFAULTTONULL, VERTSIZE,
         },
     },
 };
@@ -26,8 +26,8 @@ impl DisplayInfo {
         let rc_monitor = monitor_info_exw.monitorInfo.rcMonitor;
         let dw_flags = monitor_info_exw.monitorInfo.dwFlags;
 
-        let name = PCWSTR(sz_device);
-        let hdc = unsafe { CreateDCW(name, None, None, None) };
+        let device_name = PCWSTR(sz_device);
+        let hdc = unsafe { CreateDCW(device_name, None, None, None) };
         let width_mm = unsafe { GetDeviceCaps(hdc, HORZSIZE) };
         let height_mm = unsafe { GetDeviceCaps(hdc, VERTSIZE) };
         if hdc != HDC::default() {
@@ -40,6 +40,7 @@ impl DisplayInfo {
         DisplayInfo {
             id: hash32(sz_device_string.as_bytes()),
             name: sz_device_string.to_string(),
+            display_desc: get_display_desc(device_name),
             raw_handle: h_monitor,
             x: rc_monitor.left,
             y: rc_monitor.top,
@@ -102,6 +103,20 @@ fn get_monitor_info_exw(h_monitor: HMONITOR) -> Result<MONITORINFOEXW> {
     unsafe { GetMonitorInfoW(h_monitor, monitor_info_exw_ptr).ok()? };
 
     Ok(monitor_info_exw)
+}
+
+fn get_display_desc(device_name: PCWSTR) -> String {
+    let mut display_device: DISPLAY_DEVICEW = unsafe { mem::zeroed() };
+    display_device.cb = mem::size_of::<DISPLAY_DEVICEW>() as u32;
+    let result = unsafe { EnumDisplayDevicesW(device_name, 0, &mut display_device, 1) };
+    if result == TRUE {
+        unsafe {
+            U16CString::from_ptr_truncate(display_device.DeviceString.as_mut_ptr(), 128)
+                .to_string_lossy()
+        }
+    } else {
+        String::new()
+    }
 }
 
 pub fn get_all() -> Result<Vec<DisplayInfo>> {

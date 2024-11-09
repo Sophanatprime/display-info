@@ -11,6 +11,8 @@ use crate::DisplayInfo;
 
 impl From<&OutputInfo> for DisplayInfo {
     fn from(info: &OutputInfo) -> Self {
+        let name = info.name.clone().unwrap_or_default();
+        let display_desc = name.clone();
         let scale_factor = info.scale_factor as f32;
         let rotation = match info.transform {
             wl_output::Transform::_90 | wl_output::Transform::Flipped90 => 90.,
@@ -28,8 +30,9 @@ impl From<&OutputInfo> for DisplayInfo {
         let (w, h) = info.logical_size.unwrap_or(info.physical_size);
         let (width_mm, height_mm) = info.physical_size;
         DisplayInfo {
+            name,
+            display_desc,
             id: info.id,
-            name: info.name.clone().unwrap_or_default(),
             raw_handle: unsafe { xcb::randr::Output::new(info.id) },
             x: ((x as f32) / scale_factor) as i32,
             y: ((y as f32) / scale_factor) as i32,

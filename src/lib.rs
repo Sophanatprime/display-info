@@ -36,6 +36,8 @@ use anyhow::Result;
 pub struct DisplayInfo {
     /// The Display Name
     pub name: String,
+    /// Friendly name of the display.
+    pub display_desc: String,
     /// Unique identifier associated with the display.
     pub id: u32,
     /// Native screen raw handle
